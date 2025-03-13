@@ -6,7 +6,6 @@
 </v-row>
 </template>
 <script setup>
-    import { ref } from 'vue'
     import { getDataUserInfo } from  '@/axioscalls.js'
     import { data } from '@/stores/data.js'
     const lesDatas = data()    
