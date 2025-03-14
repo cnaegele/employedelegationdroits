@@ -34,7 +34,35 @@
         </div>
         <div v-else>
           Delégué :
-          <v-btn rounded="xl" class="text-none" @click="choixEmployeDélégué()">Choix employé</v-btn>
+          <v-btn rounded="xl" class="text-none" @click="choixEmployeDelegue()">Choix employé</v-btn>
+          <br>
+          {{ titreListeProprietaire }}
+          <br>
+          <span v-if="idEmployeDelegue > 0">
+            <v-btn size="small" rounded="xl" class="text-none" @click="choixEmployeProprietaire()">+ employe</v-btn>
+            &nbsp;&nbsp;
+            <v-btn size="small" rounded="xl" class="text-none" @click="choixUniteProprietaire()">+ unité</v-btn>
+          </span>
+          <v-list>
+            <v-list-item v-for="item in itemsListeProprietaireE" :key="item.idemploye">
+              <template v-slot:prepend>
+                <v-icon @click.stop="demandeSupprimeProprietaireE(item.idemploye)" color="error" class="mr-2">mdi-delete</v-icon>
+              </template>
+              <span :class="item.bactif === 0 ? 'inactif' : ''">
+                {{ item.nomemploye }} {{ item.prenomemploye }} <span class="uniteorg">({{ item.uniteorg }})</span>
+              </span>
+            </v-list-item>
+          </v-list>
+          <v-list>
+            <v-list-item v-for="item in itemsListeProprietaireU" :key="item.iduniteorg">
+              <template v-slot:prepend>
+                <v-icon @click.stop="demandeSupprimeProprietaireU(item.iduniteorg)" color="error" class="mr-2">mdi-delete</v-icon>
+              </template>
+              <span :class="item.bactif === 0 ? 'inactif' : ''">
+                {{ item.nomuniteorg }}
+              </span>
+            </v-list-item>
+          </v-list>
         </div>
       </div>
       <div v-else>
@@ -97,7 +125,7 @@
           <v-btn
             text="Fermer"
             variant="tonal"
-            @click="closeCardUniteOrgDCChoix"
+            @click="closeCardUniteOrgChoix"
           ></v-btn>
         </v-card-actions>
         <v-card-text>
@@ -106,7 +134,7 @@
                     <UniteOrgChoix 
                         uniteHorsVdL="non" 
                         :modeChoix="'unique'"
-                        @choixUniteOrg="receptionUnitesOrgProprietaire"
+                        @choixUniteOrg="receptionUnitesOrg"
                     />
                 </Suspense>
             </div>
@@ -127,21 +155,38 @@
 </style>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import AppToper from '@/components/AppToper.vue';
 import { data } from '@/stores/data.js'
 import EmployeChoix from '@/components/EmployeChoix.vue'
-import { getDeleguesListe4Employe, sauveDelegue4Employe } from '@/axioscalls.js'
+import { getDeleguesListe4Employe, getProprietaireListe4Employe, getDeleguesListe4UniteOrg, sauveDelegue4Employe, sauveDelegue4Unite } from '@/axioscalls.js'
 
 const lesDatas = data()
 const modeGestion = ref('proprietaireGSTdelegue') //delegueGSTproprietaire
 const titreListeDelegue = ref('...')
 const itemsListeDelegue = ref([])
+const titreListeProprietaire = ref('...')
+const itemsListeProprietaireE = ref([])
+const itemsListeProprietaireU = ref([])
 const idEmployeProprietaire = ref(0)
 const idEmployeDelegue = ref(0)
 const employeModeChoix = ref('proprietaire') //delegue
 const libelleEmployeModeChoix = ref('')
-//console.log(lesDatas)
+const idUniteOrgProprietaire = ref(0)
+const libelleUniteOrgModeChoix = ref('')
+
+watch(() => modeGestion.value, () => {
+  titreListeDelegue.value = '...'
+  itemsListeDelegue.value = []
+  titreListeProprietaire.value = '...'
+  itemsListeProprietaireE.value = []
+  itemsListeProprietaireU.value = []
+  idEmployeProprietaire.value = 0
+  idEmployeDelegue.value = 0
+  libelleEmployeModeChoix.value = ''
+  idUniteOrgProprietaire.value = 0
+  libelleUniteOrgModeChoix.value = ''
+})
 
 const choixEmployeProprietaire = () => {
   employeModeChoix. value = 'proprietaire'
@@ -157,20 +202,30 @@ const choixEmployeDelegue = () => {
 }
 
 const receptionEmploye = (idemploye, jsonData) => {
-  //console.log(jsonData)
-    const oEmployeProp = JSON.parse(jsonData)
-    if (modeGestion.value == 'proprietaireGSTdelegue') {
-        if (employeModeChoix.value == 'proprietaire') {
-          idEmployeProprietaire.value = idemploye
-          titreListeDelegue.value = `Liste des employés pouvant éditer les documents, agendés, suivis de ${oEmployeProp.prenom} ${oEmployeProp.nom}. ${oEmployeProp.unite}`
-          listeDelegue4Employe(idemploye)
-        } else if (employeModeChoix.value == 'delegue') {
-          idEmployeDelegue.value = idemploye
-          console.log(`sauve: idempprop:${idEmployeProprietaire.value} idempdeleg:${idEmployeDelegue.value}`)
-          demandeSauveDelegue4Employe(idEmployeProprietaire.value, idEmployeDelegue.value)
-        }
-    }
-    closeCardEmployeChoix()
+  //console.log(jsonData)  console.log(`${modeGestion.value} ${employeModeChoix.value}`)
+  const oEmploye = JSON.parse(jsonData)
+  if (modeGestion.value == 'proprietaireGSTdelegue') {
+      if (employeModeChoix.value == 'proprietaire') {
+        idEmployeProprietaire.value = idemploye
+        titreListeDelegue.value = `Liste des employés pouvant éditer les documents, agendés, suivis de ${oEmploye.prenom} ${oEmploye.nom}. ${oEmploye.unite}`
+        listeDelegue4Employe(idemploye)
+      } else if (employeModeChoix.value == 'delegue') {
+        idEmployeDelegue.value = idemploye
+        console.log(`sauve: idempprop:${idEmployeProprietaire.value} idempdeleg:${idEmployeDelegue.value}`)
+        demandeSauveDelegue4Employe(idEmployeProprietaire.value, idEmployeDelegue.value)
+      }
+  } else if (modeGestion.value == 'delegueGSTproprietaire') {
+    if (employeModeChoix.value == 'delegue') {
+        idEmployeDelegue.value = idemploye
+        titreListeProprietaire.value = `Liste des employés et unités dont les les documents, agendés, suivis peuvent être éditer ${oEmploye.prenom} ${oEmploye.nom}. ${oEmploye.unite}`
+        listeProprietaire4Employe(idemploye)
+      } else if (employeModeChoix.value == 'proprietaire') {
+        idEmployeProprietaire.value = idemploye
+        console.log(`sauve: idempprop:${idEmployeProprietaire.value} idempdeleg:${idEmployeDelegue.value}`)
+        demandeSauveDelegue4Employe(idEmployeProprietaire.value, idEmployeDelegue.value)
+      }
+  }
+  closeCardEmployeChoix()
 }
 const closeCardEmployeChoix = () => {
   document.getElementById("btnActiveCardChoixEmploye").click()    
@@ -179,35 +234,19 @@ const closeCardEmployeChoix = () => {
 const choixUniteProprietaire = () => {
     document.getElementById("btnActiveCardChoixUniteOrg").click() 
 }
-const receptionUnitesOrgProprietaire = (jsonData) => {
-    console.log(`Réception unité organisationnelle \njson: ${jsonData}`)
-    /*
-    const retUnitesOrgDC = JSON.parse(jsonData)
-    let aUnitesOrgDC = []
-    if (Array.isArray(retUnitesOrgDC)) {
-        aUnitesOrgDC = retUnitesOrgDC    
-    } else {
-        aUnitesOrgDC.push(retUnitesOrgDC)   
-    }
-    for (let i=0; i<aUnitesOrgDC.length; i++) {
-        let bTrouve = false
-        for (let j=0; j<lesDatas.document.unitesOrgDroitConsultation.length; j++) {
-            if (aUnitesOrgDC[i].id == lesDatas.document.unitesOrgDroitConsultation[j].id) {
-                bTrouve= true
-                break
-            }
-        }
-        if (!bTrouve) {
-            const oUniteOrgDCPlus = {
-                "id": aUnitesOrgDC[i].id,
-                "nom": aUnitesOrgDC[i].description,
-            }
-            lesDatas.document.unitesOrgDroitConsultation.push(oUniteOrgDCPlus)
-        }
-    }
-    */
-    closeCardUniteOrgChoix()
-    panelDroitsConsultation.value = [0]
+const receptionUnitesOrg = (jsonData) => {
+  console.log(`Réception unité organisationnelle \njson: ${jsonData}`)
+  const oUniteOrg = JSON.parse(jsonData)
+      idUniteOrgProprietaire.value = oUniteOrg.id
+  if (modeGestion.value == 'proprietaireGSTdelegue') {
+      titreListeDelegue.value = `Liste des employés pouvant éditer les documents, agendés, suivis des employés de l'unité organisationnelle ${oUniteOrg.description}`
+      listeDelegue4UniteOrg(oUniteOrg.id)
+  } else if (modeGestion.value == 'delegueGSTproprietaire') {
+      idUniteOrgProprietaire.value = oUniteOrg.id
+      console.log(`sauve: iduoprop:${idUniteOrgProprietaire.value} idempdeleg:${idEmployeDelegue.value}`)
+      //demandeSauveDelegue4Unite(idUniteOrgProprietaire.value, idEmployeDelegue.value)
+  }
+  closeCardUniteOrgChoix()
 }
 const closeCardUniteOrgChoix = () => {
   document.getElementById("btnActiveCardChoixUniteOrg").click()    
@@ -226,29 +265,124 @@ const listeDelegue4Employe = async (idEmployeProprietaire) => {
     itemsListeDelegue.value = deleguesListe
 }
 
+const listeProprietaire4Employe = async (idEmployeDelegue) => {
+    const oCritere = {
+        "idemploye" : idEmployeDelegue,
+    }    
+    const proprietaireListe = await getProprietaireListe4Employe(JSON.stringify(oCritere))
+    //console.log(proprietaireListe)
+    if (proprietaireListe.hasOwnProperty('message')) {
+        messageErreur.value += proprietaireListe.message + '<br>'
+        proprietaireListe = []
+    }
+
+    itemsListeProprietaireE.value = []
+    itemsListeProprietaireU.value = []
+    let typeprop, ordre, idgo, nom, prenom, bactif, uniteorg
+    let item
+    for (let i=0; i<proprietaireListe.length; i++) {
+      typeprop = proprietaireListe[i].typeprop
+      if (typeprop === 'employe') {
+        idgo = proprietaireListe[i].idgo 
+        nom = proprietaireListe[i].nom 
+        prenom = proprietaireListe[i].prenom 
+        bactif = proprietaireListe[i].bactif 
+        uniteorg = proprietaireListe[i].uniteorg 
+        item = {
+          idemploye : idgo,
+          nomemploye : nom,
+          prenomemploye : prenom,
+          bactif : bactif,
+          uniteorg : uniteorg,
+        }
+        itemsListeProprietaireE.value.push(item)
+      }
+      else if (typeprop === 'uniteorg') {
+        ordre = proprietaireListe[i].ordre
+        if (ordre === 1) {
+          idgo = proprietaireListe[i].idgo 
+          nom = proprietaireListe[i].nom 
+          bactif = proprietaireListe[i].bactif 
+          item = {
+            iduniteorg : idgo,
+            nomuniteorg : nom,
+            bactif : bactif,
+          }
+          itemsListeProprietaireU.value.push(item)
+        }
+      }
+    }
+    //console.log(itemsListeProprietaireE.value)
+}
+
+const listeDelegue4UniteOrg = async (idUniteOrgProprietaire) => {
+    const oCritere = {
+        "iduniteorg" : idUniteOrgProprietaire,
+    }    
+    const deleguesListe = await getDeleguesListe4UniteOrg(JSON.stringify(oCritere))
+    //console.log(deleguesListe)
+    if (deleguesListe.hasOwnProperty('message')) {
+        messageErreur.value += deleguesListe.message + '<br>'
+        deleguesListe = []
+    }
+    itemsListeDelegue.value = deleguesListe
+}
+
 const demandeSauveDelegue4Employe = async (idEmployeProprietaire, idEmployeDelegue) => {
     const oData = {
       "action" : "sauve",
       "idemployeproprietaire" : idEmployeProprietaire,
       "idemployedelegue" : idEmployeDelegue,
     }    
-    console.log (JSON.stringify(oData))
+    //console.log (JSON.stringify(oData))
     const ret = await sauveDelegue4Employe(JSON.stringify(oData))
-    console.log(ret)
-    listeDelegue4Employe(idEmployeProprietaire)
+    console.log(ret.message)
+    if (modeGestion.value == 'proprietaireGSTdelegue') {
+      listeDelegue4Employe(idEmployeProprietaire)
+    } else if (modeGestion.value == 'delegueGSTproprietaire') {
+      listeProprietaire4Employe(idEmployeDelegue)
+    }
 }
 
 const demandeSupprimeDelegue = async (idEmployeDelegue) => {
   console.log(`Supprimer délégué avec id: ${idEmployeDelegue}`);
-
   const oData = {
       "action" : "supprime",
       "idemployeproprietaire" : idEmployeProprietaire.value,
       "idemployedelegue" : idEmployeDelegue,
     }    
+    //console.log (JSON.stringify(oData))
+    const ret = await sauveDelegue4Employe(JSON.stringify(oData))
+    console.log(ret.message)
+    listeDelegue4Employe(idEmployeProprietaire.value)
+}
+
+const demandeSupprimeProprietaireE = async (idEmployeProprietaire) => {
+  console.log(`Supprimer propriétaire employe avec id: ${idEmployeProprietaire}`);
+
+  const oData = {
+      "action" : "supprime",
+      "idemployeproprietaire" : idEmployeProprietaire,
+      "idemployedelegue" : idEmployeDelegue.value,
+    }    
     console.log (JSON.stringify(oData))
     const ret = await sauveDelegue4Employe(JSON.stringify(oData))
     console.log(ret)
-    listeDelegue4Employe(idEmployeProprietaire.value)
+    listeProprietaire4Employe(idEmployeDelegue.value)
 }
+
+const demandeSupprimeProprietaireU = async (idUniteProprietaire) => {
+  console.log(`Supprimer propriétaire unite avec id: ${idUniteProprietaire}`);
+
+  const oData = {
+      "action" : "supprime",
+      "iduniteproprietaire" : idUniteProprietaire,
+      "idemployedelegue" : idEmployeDelegue.value,
+    }    
+    console.log (JSON.stringify(oData))
+    const ret = await sauveDelegue4Unite(JSON.stringify(oData))
+    console.log(ret)
+    listeProprietaire4Employe(idEmployeDelegue.value)
+}
+
 </script>

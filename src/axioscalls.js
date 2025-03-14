@@ -55,9 +55,50 @@ export async function getDeleguesListe4Employe(jsonCriteres) {
     return response.data
 }
 
+export async function getProprietaireListe4Employe(jsonCriteres) {
+    const g_pathurlemploye = '/goeland/gestion_spec/employe_delegationdroits/axios/'
+    const urlel = `${g_devurl}${g_pathurlemploye}employe_proprietairesliste.php`
+    const params = new URLSearchParams([['jsoncriteres', jsonCriteres]])
+    //return jsonCriteres
+    const response = await axios.get(urlel, { params })
+        .catch(function (error) {
+            return traiteAxiosError(error)
+        })
+    return response.data
+}
+
+export async function getDeleguesListe4UniteOrg(jsonCriteres) {
+    const g_pathurlemploye = '/goeland/gestion_spec/employe_delegationdroits/axios/'
+    const urlel = `${g_devurl}${g_pathurlemploye}uniteorg_deleguesliste.php`
+    const params = new URLSearchParams([['jsoncriteres', jsonCriteres]])
+    //return jsonCriteres
+    const response = await axios.get(urlel, { params })
+        .catch(function (error) {
+            return traiteAxiosError(error)
+        })
+    return response.data
+}
+
 export async function sauveDelegue4Employe(jsonData) {
+    console.log(`sauveDelegue4Employe. jsondata: ${jsonData}`)
     const g_pathurlemploye = '/goeland/gestion_spec/employe_delegationdroits/axios/'
     const urlsd = `${g_devurl}${g_pathurlemploye}employe_delegue_sauve.php`
+    const response = await axios.post(urlsd, jsonData, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .catch(function (error) {
+        return traiteAxiosError(error)
+    })
+    console.log('sauveDelegue4Employe avant return')      
+    return response.data
+}
+
+export async function sauveDelegue4Unite(jsonData) {
+    console.log(jsonData)
+    const g_pathurlemploye = '/goeland/gestion_spec/employe_delegationdroits/axios/'
+    const urlsd = `${g_devurl}${g_pathurlemploye}uniteorg_delegue_sauve.php`
     const response = await axios.post(urlsd, jsonData, {
         headers: {
             'Content-Type': 'application/json'
