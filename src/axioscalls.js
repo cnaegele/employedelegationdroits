@@ -91,7 +91,6 @@ export async function sauveDelegue4Employe(jsonData) {
     .catch(function (error) {
         return traiteAxiosError(error)
     })
-    console.log('sauveDelegue4Employe avant return')      
     return response.data
 }
 
