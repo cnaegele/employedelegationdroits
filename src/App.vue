@@ -18,12 +18,7 @@
           <br>
           {{ titreListeDelegue }}
           <br>
-          <span v-if="idEmployeProprietaire > 0">
-            <v-btn size="small" rounded="xl" class="text-none" @click="choixEmployeDelegue()">+</v-btn>
-          </span>
-          <span v-if="idUniteOrgProprietaire > 0">
-            <v-btn size="small" rounded="xl" class="text-none" @click="choixEmployeDelegue()">+</v-btn>
-          </span>
+          <v-btn size="small" rounded="xl" class="text-none" @click="choixEmployeDelegue()">+ employé</v-btn>
           <v-list>
             <v-list-item v-for="item in itemsListeDelegue" :key="item.idemploye">
               <template v-slot:prepend>
