@@ -18,7 +18,9 @@
           <br>
           {{ titreListeDelegue }}
           <br>
-          <v-btn size="small" rounded="xl" class="text-none" @click="choixEmployeDelegue()">+ employé</v-btn>
+          <span v-if="idEmployeProprietaire > 0 || idUniteOrgProprietaire > 0">
+            <v-btn size="small" rounded="xl" class="text-none" @click="choixEmployeDelegue()">+ employé</v-btn>
+          </span>
           <v-list>
             <v-list-item v-for="item in itemsListeDelegue" :key="item.idemploye">
               <template v-slot:prepend>
@@ -189,14 +191,11 @@ watch(() => modeGestion.value, () => {
 const choixEmployeProprietaire = () => {
   employeModeChoix. value = 'proprietaire'
   libelleEmployeModeChoix. value = 'propriétaire'
-  idEmployeProprietaire.value = 0
-  idUniteOrgProprietaire.value = 0
   document.getElementById("btnActiveCardChoixEmploye").click() 
 }
 const choixEmployeDelegue = () => {
   employeModeChoix. value = 'delegue'
   libelleEmployeModeChoix. value = 'délégué'
-  idEmployeDelegue.value = 0
   document.getElementById("btnActiveCardChoixEmploye").click() 
 }
 
@@ -206,6 +205,7 @@ const receptionEmploye = (idemploye, jsonData) => {
   if (modeGestion.value == 'proprietaireGSTdelegue') {
       if (employeModeChoix.value == 'proprietaire') {
         idEmployeProprietaire.value = idemploye
+        idUniteOrgProprietaire.value = 0
         titreListeDelegue.value = `Liste des employés pouvant éditer les documents, agendés, suivis de ${oEmploye.prenom} ${oEmploye.nom}. ${oEmploye.unite}`
         listeDelegue4Employe(idemploye)
       } else if (employeModeChoix.value == 'delegue') {
@@ -237,7 +237,6 @@ const closeCardEmployeChoix = () => {
 }
 
 const choixUniteProprietaire = () => {
-  idUniteOrgProprietaire.value = 0
   idEmployeProprietaire.value = 0
   document.getElementById("btnActiveCardChoixUniteOrg").click() 
 }
